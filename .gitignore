@@ -1,0 +1,9 @@
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+venv/
+
+# Large model weights excluded — see README for download instructions
+roberta_best/model.safetensors
