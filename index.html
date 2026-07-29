@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CyberShield — Cyberbullying Type Detector</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #07080f;
+    --bg2: #0d0f1a;
+    --bg3: #12152200;
+    --surface: #131726;
+    --surface2: #1a1f30;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #eef0f8;
+    --muted: #7a80a0;
+    --accent: #4f8fff;
+    --accent2: #7c5cfc;
+    --glow: rgba(79,143,255,0.18);
+
+    --age:      #f97316;
+    --ethnicity:#a855f7;
+    --gender:   #ec4899;
+    --religion: #06b6d4;
+    --other:    #eab308;
+    --none:     #22c55e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND GRID ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(79,143,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,143,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+
+  /* ── GLOWING ORBS ── */
+  .orb {
+    position: fixed; border-radius: 50%; filter: blur(90px);
+    pointer-events: none; z-index: 0; opacity: 0.35;
+  }
+  .orb1 { width: 500px; height: 500px; background: #1a2fff; top: -150px; right: -100px; }
+  .orb2 { width: 400px; height: 400px; background: #7c0fff; bottom: -100px; left: -80px; }
+  .orb3 { width: 300px; height: 300px; background: #0f5fff; top: 40%; left: 50%; transform: translate(-50%,-50%); opacity: 0.15; }
+
+  /* ── LAYOUT ── */
+  .wrapper { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── NAV ── */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 0 0;
+    animation: fadeDown 0.6s ease both;
+  }
+  .logo {
+    font-family: 'Cormorant', serif; font-weight: 800; font-size: 50px;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #4f8fff, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .logo span { font-weight: 400; opacity: 0.6; }
+  .nav-tag {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.06em;
+    color: var(--accent); border: 1px solid rgba(79,143,255,0.3);
+    padding: 5px 14px; border-radius: 99px;
+    background: rgba(79,143,255,0.08);
+  }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center; padding: 72px 0 56px;
+    animation: fadeUp 0.8s ease 0.1s both;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 24px;
+  }
+  .hero-eyebrow::before, .hero-eyebrow::after {
+    content: ''; width: 32px; height: 1px; background: var(--border2);
+  }
+  .hero h1 {
+    font-family: 'Cormorant', serif; font-weight: 800;
+    font-size: clamp(44px, 8vw, 76px); line-height: 1.05;
+    letter-spacing: -2px; margin-bottom: 20px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #4f8fff 0%, #a78bfa 50%, #f472b6 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 17px; color: var(--muted); max-width: 520px;
+    margin: 0 auto 0; line-height: 1.7; font-weight: 300;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+    position: relative; overflow: hidden;
+    animation: fadeUp 0.9s ease 0.2s both;
+  }
+  .card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(79,143,255,0.04), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* ── MODEL TOGGLE ── */
+  .model-toggle {
+    display: flex; gap: 8px; margin-bottom: 28px;
+  }
+  .model-btn {
+    flex: 1; padding: 10px 16px; border-radius: 10px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--muted); font-family: 'Jost', sans-serif;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center;
+    justify-content: center; gap: 7px;
+  }
+  .model-btn.active {
+    background: rgba(79,143,255,0.12);
+    border-color: rgba(79,143,255,0.45);
+    color: #7eb8ff;
+  }
+  .model-btn:hover:not(.active) { border-color: var(--border2); background: var(--surface2); color: var(--text); }
+  .model-icon { width: 16px; height: 16px; border-radius: 4px; display: inline-block; }
+  .icon-roberta { background: linear-gradient(135deg,#4f8fff,#a78bfa); }
+  .icon-classical { background: linear-gradient(135deg,#f97316,#facc15); }
+
+  /* ── TEXTAREA ── */
+  .input-label {
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px; display: block;
+  }
+  .textarea-wrap { position: relative; }
+  textarea {
+    width: 100%; min-height: 130px; resize: vertical;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+    color: var(--text); font-family: 'Jost', sans-serif;
+    font-size: 15px; line-height: 1.6; font-weight: 300;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  textarea:focus {
+    border-color: rgba(79,143,255,0.5);
+    box-shadow: 0 0 0 3px rgba(79,143,255,0.1);
+  }
+  textarea::placeholder { color: #3d4260; }
+  .char-count {
+    position: absolute; bottom: 12px; right: 14px;
+    font-size: 11px; color: var(--muted); pointer-events: none;
+  }
+
+  /* ── EXAMPLE CHIPS ── */
+  .examples-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 28px;
+  }
+  .ex-chip {
+    font-size: 12px; padding: 5px 12px; border-radius: 99px;
+    border: 1px solid var(--border2); color: var(--muted);
+    background: transparent; cursor: pointer;
+    transition: all 0.18s; white-space: nowrap;
+    font-family: 'Jost', sans-serif;
+  }
+  .ex-chip:hover { border-color: rgba(79,143,255,0.4); color: var(--text); background: rgba(79,143,255,0.07); }
+
+  /* ── BUTTON ── */
+  .analyze-btn {
+    width: 100%; padding: 15px 28px; border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    border: none; color: white;
+    font-family: 'Cormorant', serif; font-weight: 700;
+    font-size: 15px; letter-spacing: 0.03em;
+    cursor: pointer; transition: all 0.25s;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .analyze-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(79,143,255,0.35); }
+  .analyze-btn:hover::before { opacity: 1; }
+  .analyze-btn:active { transform: translateY(0); }
+  .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-arrow { transition: transform 0.2s; }
+  .analyze-btn:hover .btn-arrow { transform: translateX(4px); }
+
+  /* ── LOADER ── */
+  .loader { display: none; align-items: center; justify-content: center; gap: 6px; }
+  .loader.active { display: flex; }
+  .loader-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: white; animation: pulse 1.2s ease infinite;
+  }
+  .loader-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loader-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
+
+  /* ── RESULT ── */
+  .result-section {
+    margin-top: 32px; display: none;
+    animation: fadeUp 0.5s ease both;
+  }
+  .result-section.visible { display: block; }
+
+  .result-divider {
+    height: 1px; background: var(--border); margin-bottom: 28px;
+  }
+
+  .verdict-row {
+    display: flex; align-items: center; gap: 20px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 24px; margin-bottom: 24px;
+  }
+  .verdict-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+  }
+  .verdict-label { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .verdict-value { font-family: 'Cormorant', serif; font-weight: 700; font-size: 22px; }
+  .verdict-conf { margin-left: auto; text-align: right; }
+  .verdict-conf .pct { font-family: 'Cormorant', serif; font-weight: 800; font-size: 32px; }
+  .verdict-conf .pct-label { font-size: 12px; color: var(--muted); }
+
+  /* ── BARS ── */
+  .bars-label {
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+  }
+  .bar-row { margin-bottom: 12px; }
+  .bar-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .bar-name { font-size: 13px; font-weight: 500; }
+  .bar-pct { font-size: 13px; color: var(--muted); font-weight: 400; }
+  .bar-track {
+    height: 6px; background: rgba(255,255,255,0.06);
+    border-radius: 99px; overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 99px;
+    width: 0; transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  /* ── ERROR ── */
+  .error-box {
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 12px; padding: 14px 18px;
+    color: #f87171; font-size: 14px; display: none; margin-top: 16px;
+  }
+  .error-box.visible { display: block; }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+    margin-top: 40px;
+    animation: fadeUp 1s ease 0.4s both;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Cormorant', serif; font-weight: 800; font-size: 28px;
+    background: linear-gradient(135deg, #4f8fff, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; padding-top: 48px;
+    font-size: 13px; color: var(--muted);
+    animation: fadeUp 1s ease 0.5s both;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:none; } }
+
+  /* ── COLOR CLASSES ── */
+  .c-age      { --c: var(--age); }
+  .c-ethnicity{ --c: var(--ethnicity); }
+  .c-gender   { --c: var(--gender); }
+  .c-religion { --c: var(--religion); }
+  .c-other    { --c: var(--other); }
+  .c-none     { --c: var(--none); }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div class="wrapper">
+
+  <nav>
+    <div class="logo">Cyber<span>Shield</span></div>
+    <div class="nav-tag">NLP Project — 2025</div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Advanced NLP · Social Media Analysis</div>
+    <h1>Detect <em>Cyberbullying</em><br/>in Real Time</h1>
+    <p>Paste any social media text and our AI will identify the type of cyberbullying using fine-tuned RoBERTa and classical ML models.</p>
+  </div>
+
+  <div class="card">
+
+    <!-- Model Selector -->
+    <div class="model-toggle">
+      <button class="model-btn active" onclick="selectModel('roberta', this)">
+        <span class="model-icon icon-roberta"></span>
+        RoBERTa (Deep Learning)
+      </button>
+      <button class="model-btn" onclick="selectModel('classical', this)">
+        <span class="model-icon icon-classical"></span>
+        TF-IDF + Logistic Regression
+      </button>
+    </div>
+
+    <!-- Input -->
+    <label class="input-label">Tweet or social media text</label>
+    <div class="textarea-wrap">
+      <textarea id="inputText" placeholder="Type or paste a tweet here…" maxlength="500" oninput="updateChar()"></textarea>
+      <span class="char-count" id="charCount">0 / 500</span>
+    </div>
+
+    <!-- Example Chips -->
+    <div class="examples-row">
+      <span class="ex-chip" onclick="fillExample(this)">You should be ashamed of your religion</span>
+      <span class="ex-chip" onclick="fillExample(this)">People your age are so useless</span>
+      <span class="ex-chip" onclick="fillExample(this)">I love this sunny weather today!</span>
+      <span class="ex-chip" onclick="fillExample(this)">Go back to your own country</span>
+      <span class="ex-chip" onclick="fillExample(this)">Women like you don't belong here</span>
+    </div>
+
+    <!-- Button -->
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
+      <span id="btnText">Analyze Text</span>
+      <span class="btn-arrow" id="btnArrow">→</span>
+      <div class="loader" id="loader">
+        <div class="loader-dot"></div>
+        <div class="loader-dot"></div>
+        <div class="loader-dot"></div>
+      </div>
+    </button>
+
+    <!-- Error -->
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- Result -->
+    <div class="result-section" id="resultSection">
+      <div class="result-divider"></div>
+
+      <div class="verdict-row" id="verdictRow">
+        <div class="verdict-icon" id="verdictIcon"></div>
+        <div>
+          <div class="verdict-label">Detected type</div>
+          <div class="verdict-value" id="verdictValue"></div>
+        </div>
+        <div class="verdict-conf">
+          <div class="pct" id="confPct"></div>
+          <div class="pct-label">confidence</div>
+        </div>
+      </div>
+
+      <div class="bars-label">Score breakdown — all categories</div>
+      <div id="barsContainer"></div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num">47K</div>
+      <div class="stat-desc">Tweets in training set</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">6</div>
+      <div class="stat-desc">Bullying categories</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">93%</div>
+      <div class="stat-desc">F1 score (RoBERTa)</div>
+    </div>
+  </div>
+
+  <footer>
+    Built with RoBERTa · TF-IDF · FastAPI &nbsp;·&nbsp; Advanced NLP Project
+  </footer>
+
+</div>
+
+<script>
+  const CLASS_META = {
+    age:               { label: 'Age-based bullying',     emoji: '🧓', color: '#f97316' },
+    ethnicity:         { label: 'Ethnicity / Race',       emoji: '🌍', color: '#a855f7' },
+    gender:            { label: 'Gender-based bullying',  emoji: '⚧',  color: '#ec4899' },
+    religion:          { label: 'Religious harassment',   emoji: '✝',  color: '#06b6d4' },
+    other_cyberbullying:{ label: 'Other cyberbullying',   emoji: '⚠',  color: '#eab308' },
+    not_cyberbullying: { label: 'Not cyberbullying',      emoji: '✓',  color: '#22c55e' },
+  };
+
+  let selectedModel = 'roberta';
+
+  function selectModel(m, btn) {
+    selectedModel = m;
+    document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function updateChar() {
+    const v = document.getElementById('inputText').value.length;
+    document.getElementById('charCount').textContent = v + ' / 500';
+  }
+
+  function fillExample(chip) {
+    document.getElementById('inputText').value = chip.textContent.trim();
+    updateChar();
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('analyzeBtn');
+    const txt = document.getElementById('btnText');
+    const arr = document.getElementById('btnArrow');
+    const ldr = document.getElementById('loader');
+    btn.disabled = on;
+    txt.style.display = on ? 'none' : '';
+    arr.style.display = on ? 'none' : '';
+    ldr.classList.toggle('active', on);
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = msg;
+    box.classList.add('visible');
+  }
+
+  function hideError() {
+    document.getElementById('errorBox').classList.remove('visible');
+  }
+
+  async function analyze() {
+    const text = document.getElementById('inputText').value.trim();
+    if (!text) { showError('Please enter some text first.'); return; }
+    hideError();
+    setLoading(true);
+    document.getElementById('resultSection').classList.remove('visible');
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, model: selectedModel })
+      });
+
+      if (!res.ok) throw new Error('Server error: ' + res.status);
+      const data = await res.json();
+      renderResult(data);
+    } catch (e) {
+      if (e.message.includes('fetch')) {
+        showError('Cannot connect to API. Make sure your server is running: uvicorn app:app --reload');
+      } else {
+        showError(e.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResult(data) {
+    const pred  = data.prediction;
+    const conf  = data.confidence;
+    const scores = data.all_scores;
+    const meta  = CLASS_META[pred] || { label: pred, emoji: '?', color: '#4f8fff' };
+
+    // Verdict
+    const icon = document.getElementById('verdictIcon');
+    icon.textContent = meta.emoji;
+    icon.style.background = meta.color + '22';
+    icon.style.border = '1px solid ' + meta.color + '55';
+    icon.style.fontSize = '26px';
+
+    document.getElementById('verdictValue').textContent = meta.label;
+    document.getElementById('verdictValue').style.color = meta.color;
+
+    const pct = document.getElementById('confPct');
+    pct.textContent = Math.round(conf * 100) + '%';
+    pct.style.color = meta.color;
+
+    // Bars
+    const container = document.getElementById('barsContainer');
+    container.innerHTML = '';
+    const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+
+    sorted.forEach(([cls, score]) => {
+      const m = CLASS_META[cls] || { label: cls, color: '#4f8fff' };
+      const pctVal = Math.round(score * 100);
+      const isBest = cls === pred;
+
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-meta">
+          <span class="bar-name" style="${isBest ? 'color:'+m.color : ''}">${m.label}${isBest ? ' ●' : ''}</span>
+          <span class="bar-pct">${pctVal}%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" data-w="${pctVal}" style="background:${m.color}${isBest ? '' : '88'}"></div>
+        </div>`;
+      container.appendChild(row);
+    });
+
+    const section = document.getElementById('resultSection');
+    section.classList.add('visible');
+
+    // Animate bars after render
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.bar-fill').forEach(bar => {
+          bar.style.width = bar.dataset.w + '%';
+        });
+      });
+    });
+
+    // Scroll into view
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Allow Enter key (Shift+Enter for newline)
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && document.activeElement.tagName === 'TEXTAREA') {
+      e.preventDefault();
+      analyze();
+    }
+  });
+</script>
+</body>
+</html>
